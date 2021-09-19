@@ -183,6 +183,7 @@ class MyHelp(commands.HelpCommand):
 async def main():
     db = await aiosqlite.connect('bot.db')
     db.row_factory = aiosqlite.Row
+
     session = aiohttp.ClientSession()
 
     bot = TBot(db=db, session=session)
