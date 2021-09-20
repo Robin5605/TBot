@@ -42,7 +42,7 @@ class Levelling(commands.Cog):
 
         async with self.bot.db.cursor() as cur:
             q = await cur.execute('SELECT * FROM Level WHERE userID = ?', [member.id])
-            row = await q.fetchall()
+            row = await q.fetchone()
             database_xp = row['XP'] if row else 0
 
             return database_xp
@@ -71,6 +71,8 @@ class Levelling(commands.Cog):
 
         text = f'Level: {level} | {xp_to_next}/{xp_per_level} {round((xp_to_next/xp_per_level) * 100)}%'
         embed = discord.Embed(title=f'{member}\'s level', description=text, color = discord.Color.blue())
+
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Levelling(bot))
