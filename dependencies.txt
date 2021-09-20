@@ -1,1 +1,4 @@
+discord
 asyncpraw
+aiosqlite
+uuid
