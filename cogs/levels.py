@@ -52,8 +52,12 @@ class Levelling(commands.Cog):
         if message.author.bot:
             return
 
+        xp = await self.get_xp(message.author)
+        if xp % 100 == 0 and xp != 0:
+            await message.channel.send(f'{message.author.mention} just reached level {xp / 100}. Nice job!')
+
         xp_per_message = 1
-        try:
+        try: 
             self.cache[message.author.id] += xp_per_message
         except KeyError:
             self.cache[message.author.id] = xp_per_message

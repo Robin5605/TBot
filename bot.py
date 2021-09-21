@@ -36,17 +36,20 @@ initial_extensions = (
     'cogs.tickets',
     'cogs.fun',
     'cogs.reddit',
-    'cogs.misc'
+    'cogs.misc',
+    'jishaku'
 )
 
 class TBot(commands.Bot):
-    def __init__(self, *, db : aiosqlite.Connection, session : aiohttp.ClientSession):
+    def __init__(self, *, db : aiosqlite.Connection, session : aiohttp.ClientSession, start_time : int):
         super().__init__("!", intents=discord.Intents.all())
         self.db = db
         self.session = session
+        self.start_time = start_time
 
         self.help_command = MyHelp()
         self.add_cog(CogControl(self))
+        self.add_cog(Core(self))
 
         for extension in initial_extensions:
             try:
@@ -58,6 +61,7 @@ class TBot(commands.Bot):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.DisabledCommand):
             await ctx.send("That command is disabled.")
+        print(error.__traceback__)
         
     async def on_ready(self):
         print("------------------------------")
@@ -155,6 +159,7 @@ class CogControl(commands.Cog):
 
     @module.command()
     async def enable(self, ctx : commands.Context, name : str):
+
         command = self.bot.get_command(name)
         if command is None:
             await ctx.send("Command not found.")
@@ -164,7 +169,16 @@ class CogControl(commands.Cog):
 
         await ctx.send(f'Enabled the `{command.qualified_name}` command.')
         
-    
+class Core(commands.Cog):
+    def __init__(self, bot) -> None:
+        self.bot = bot
+
+    @commands.command()
+    async def uptime(self, ctx : commands.Context):
+        ts_now = datetime.now().timestamp() - self.bot.start_time
+        
+        await ctx.send(f'Bot has been online for {int(ts_now)} seconds.')
+
 class MyHelp(commands.HelpCommand):
     def defaultFormat(self, parameter : inspect.Parameter) -> str:
         isRequired = parameter.default is inspect.Parameter.empty # No default argument = required
@@ -205,10 +219,10 @@ class MyHelp(commands.HelpCommand):
 async def main():
     db = await aiosqlite.connect('bot.db')
     db.row_factory = aiosqlite.Row
-
     session = aiohttp.ClientSession()
+    time = datetime.now().timestamp()
 
-    bot = TBot(db=db, session=session)
+    bot = TBot(db=db, session=session, start_time=time)
     TOKEN = os.getenv('BETA_TOKEN')
 
     try:
