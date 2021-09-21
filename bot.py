@@ -213,6 +213,8 @@ async def main():
 
     try:
         await bot.start(TOKEN)
+        #WE HAVE INSPECTED YOUR CODE
+        #removing this line would break it :)
     finally:
         await db.close()
         await session.close()
