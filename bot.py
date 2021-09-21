@@ -36,6 +36,7 @@ initial_extensions = (
     'cogs.tickets',
     'cogs.fun',
     'cogs.reddit',
+    'cogs.misc'
 )
 
 class TBot(commands.Bot):
@@ -54,6 +55,10 @@ class TBot(commands.Bot):
                 print(f'Failed to load extension {extension}.', file=sys.stderr)
                 traceback.print_exc()
                 
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.DisabledCommand):
+            await ctx.send("That command is disabled.")
+        
     async def on_ready(self):
         print("------------------------------")
         print(f"Logged in as {self.user}")
@@ -138,11 +143,28 @@ class CogControl(commands.Cog):
             await ctx.send(f'Extension `{name}` was not unloaded due to an error.')
 
     @module.command()
-    async def list(self, ctx : commands.Context):
-        ext_text = [f'`{ext[5:]}`' for ext in initial_extensions]
-        embed = discord.Embed(title='Modules', description='\n'.join(ext_text), color=discord.Color.blurple())
-        await ctx.send(embed=embed)
+    async def disable(self, ctx : commands.Context, name : str):
+        command = self.bot.get_command(name)
+        if command is None:
+            await ctx.send("Command not found.")
+            return
 
+        command.enabled = False
+
+        await ctx.send(f'Disabled the `{command.qualified_name}` command.')
+
+    @module.command()
+    async def enable(self, ctx : commands.Context, name : str):
+        command = self.bot.get_command(name)
+        if command is None:
+            await ctx.send("Command not found.")
+            return
+
+        command.enabled = True
+
+        await ctx.send(f'Enabled the `{command.qualified_name}` command.')
+        
+    
 class MyHelp(commands.HelpCommand):
     def defaultFormat(self, parameter : inspect.Parameter) -> str:
         isRequired = parameter.default is inspect.Parameter.empty # No default argument = required
@@ -190,7 +212,7 @@ async def main():
     TOKEN = os.getenv('BETA_TOKEN')
 
     try:
-        await bot.start(token=TOKEN)
+        await bot.start(TOKEN)
     finally:
         await db.close()
         await session.close()
