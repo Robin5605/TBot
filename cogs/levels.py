@@ -1,4 +1,6 @@
+from aiosqlite import cursor
 import discord
+from discord import embeds
 from discord.ext import commands
 from discord.ext import tasks
 import asyncio
@@ -62,9 +64,10 @@ class Levelling(commands.Cog):
         except KeyError:
             self.cache[message.author.id] = xp_per_message
 
-        
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     @commands.command()
     async def level(self, ctx : commands.Context, member : discord.Member = None):
+        """ Displays your or someone else's level. """
         member = member or ctx.author
 
         xp_per_level = 100
@@ -76,6 +79,18 @@ class Levelling(commands.Cog):
         text = f'Level: {level} | {xp_to_next}/{xp_per_level} {round((xp_to_next/xp_per_level) * 100)}%'
         embed = discord.Embed(title=f'{member}\'s level', description=text, color = discord.Color.blue())
 
+        await ctx.send(embed=embed)
+
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
+    @commands.command(aliases=['lb'])
+    async def leaderboard(self, ctx : commands.Context):
+        """ Shows the leaderboard for this server. """
+        embed = discord.Embed(title="Leaderboard", description = "", colour=discord.Color.blurple())
+        async with self.bot.cursor() as cur:
+            query = await cur.execute("SELECT * FROM Level ORDER BY XP DESC")
+            rows = await query.fetchall()
+            for row in rows:
+                embed.description += f"{self.bot.get_user(row['userID']).mention} - {row['XP']}\n"
         await ctx.send(embed=embed)
 
 def setup(bot):

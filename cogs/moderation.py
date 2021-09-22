@@ -14,7 +14,8 @@ class Moderation(commands.Cog):
 
     @commands.command()
     async def warn(self, ctx : commands.Context, member : discord.Member, *, reason : str ="No reason provided."):
-        async with self.bot.db.cursor() as cur:
+        """ Warns the given user with the given reason. """
+        async with self.bot.cursor() as cur:
             await cur.execute("INSERT INTO Moderation VALUES (?, ?, ?, ?)", [str(uuid.uuid4()), member.id, ctx.message.author.id, reason])
             await self.bot.db.commit()
 
@@ -22,7 +23,8 @@ class Moderation(commands.Cog):
 
     @commands.command()
     async def unwarn(self, ctx : commands.Context, warnID : str):
-        async with self.bot.db.cursor() as cur:
+        """ Unwarns the given user with the warn ID. """
+        async with self.bot.cursor() as cur:
             query = await cur.execute("SELECT * FROM Moderation WHERE warnID = ?", [warnID])
             row = await query.fetchone()
             if not row:
@@ -37,7 +39,8 @@ class Moderation(commands.Cog):
 
     @commands.command()
     async def warnings(self, ctx : commands.Context, member : discord.Member):
-        async with self.bot.db.cursor() as cur:
+        """ Displayes all warnings for a given user. """
+        async with self.bot.cursor() as cur:
             query = await cur.execute("SELECT * FROM Moderation WHERE userID = ?", [member.id])
             row = await query.fetchall()
 
@@ -62,6 +65,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     async def clearwarns(self, ctx : commands.Context, member : discord.Member):
+        """ Clears all warnings for a given user. """
         async with self.bot.db.cursor() as cur:
             await cur.execute("DELETE FROM Moderation WHERE userID = ?", [member.id])
             await self.bot.db.commit()
@@ -70,6 +74,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name='ban')
     async def _ban(self, ctx : commands.Context, member : discord.Member, *, reason="No reason provided."):
+        """ Bans a given user with the given reason. """
         await member.ban(delete_message_days=0, reason=reason)
         await ctx.send(f"Banned {member.mention}.")
 
@@ -99,7 +104,6 @@ class Moderation(commands.Cog):
         await ctx.send("Unlocked this channel.")
 
     async def cog_command_error(self, ctx, error):
-        print(f'{type(0)}: {error}')
         if isinstance(error, commands.errors.MissingRequiredArgument):
             await ctx.send("Missing required arguments.")
         elif isinstance(error, discord.Forbidden):

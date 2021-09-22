@@ -25,6 +25,7 @@ from datetime import datetime
 from textwrap import dedent
 import traceback
 import sys
+import time
 
 import inspect
 
@@ -39,6 +40,21 @@ initial_extensions = (
     'cogs.misc',
     'jishaku'
 )
+
+class _DBCursor:
+    def __init__(self, db):
+        self.cursor = None
+        self.db = db
+
+    async def __aenter__(self):
+        if self.cursor is None:
+            self.cursor = await self.db.cursor()
+            return self.cursor
+
+    async def __aexit__(self, *options):
+        if self.cursor is not None:
+            await self.cursor.close()
+            self.cursor = None
 
 class TBot(commands.Bot):
     def __init__(self, *, db : aiosqlite.Connection, session : aiohttp.ClientSession, start_time : int):
@@ -61,7 +77,9 @@ class TBot(commands.Bot):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.DisabledCommand):
             await ctx.send("That command is disabled.")
-        print(error.__traceback__)
+        elif isinstance(error, CommandOnCooldown):
+            await ctx.send(f"Please wait {int(error.retry_after)} before using that command again.")
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
         
     async def on_ready(self):
         print("------------------------------")
@@ -73,6 +91,9 @@ class TBot(commands.Bot):
             query = await cur.execute('SELECT * FROM Settings LIMIT 1')
             row = await query.fetchone()
             return row
+
+    def cursor(self) -> _DBCursor:
+        return _DBCursor(self.db)
 
 class CogControl(commands.Cog):
     def __init__(self, bot : Bot):
@@ -175,9 +196,16 @@ class Core(commands.Cog):
 
     @commands.command()
     async def uptime(self, ctx : commands.Context):
-        ts_now = datetime.now().timestamp() - self.bot.start_time
-        
-        await ctx.send(f'Bot has been online for {int(ts_now)} seconds.')
+        """ Displays the uptime of the bot. """
+        delta = datetime.now().timestamp() - self.bot.start_time
+        formatted = time.strftime("%H hours, %M minutes, and %S seconds", time.gmtime(delta))
+
+        await ctx.send(f'Bot has been online for **{formatted}** seconds.')
+
+    @commands.cooldown(rate=1, per=5)
+    @commands.command()
+    async def test(self, ctx : commands.Context):
+        await ctx.send('test')
 
 class MyHelp(commands.HelpCommand):
     def defaultFormat(self, parameter : inspect.Parameter) -> str:
