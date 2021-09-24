@@ -56,7 +56,7 @@ class Levelling(commands.Cog):
 
         xp = await self.get_xp(message.author)
         if xp % 100 == 0 and xp != 0:
-            await message.channel.send(f'{message.author.mention} just reached level {xp / 100}. Nice job!')
+            await message.channel.send(f'{message.author.mention} just reached level {int(xp / 100)}. Nice job!')
 
         xp_per_message = 1
         try: 
@@ -71,7 +71,7 @@ class Levelling(commands.Cog):
         member = member or ctx.author
 
         xp_per_level = 100
-        xp = await self.get_xp(member)
+        xp = await self.get_xp(member) 
         level = int(xp / xp_per_level)
         xp_to_next = xp % xp_per_level
 
