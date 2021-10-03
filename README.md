@@ -10,4 +10,4 @@ A general purpose Discord bot containing all the features you could need, from m
 
 **3. Install dependencies**
 
-- Run `python3 -m pip install requirements.txt` in the root directory.
+- Run `python3 -m pip install -r requirements.txt` in the root directory.
